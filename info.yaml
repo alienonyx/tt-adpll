@@ -1,6 +1,4 @@
 ---
-yaml_version: 6
-
 project:
   title: "ADPLL - All-Digital Phase-Locked Loop"
   author: "Ali Alshamma"
@@ -50,3 +48,6 @@ pinout:
   uio[5]: "dco_control[9]"
   uio[6]: "dco_control[10]"
   uio[7]: "dco_control[11]"
+
+# Do not change!
+yaml_version: 6
