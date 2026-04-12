@@ -1,0 +1,31 @@
+name: gds
+
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  gds:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build GDS
+        uses: TinyTapeout/tt-gds-action@tt09
+
+  gl_test:
+    needs: gds
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Gate-level test
+        uses: TinyTapeout/tt-gds-action@tt09
+        with:
+          action: gl_test

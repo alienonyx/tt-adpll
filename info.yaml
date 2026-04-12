@@ -1,0 +1,52 @@
+---
+yaml_version: 6
+
+project:
+  title: "ADPLL - All-Digital Phase-Locked Loop"
+  author: "Ali Alshamma"
+  discord: ""
+  description: "All-digital PLL that locks a ring oscillator to a 32.768 kHz crystal reference, synthesizing a 16.777 MHz output clock (x512 multiplication)"
+  language: "Verilog"
+  clock_hz: 0
+  tiles: "1x1"
+  top_module: "tt_um_adpll"
+
+  source_files:
+    - tt_um_adpll.v
+    - adpll_top.v
+    - dco.v
+    - tdc.v
+    - loop_filter.v
+    - divider.v
+    - lock_detect.v
+
+pinout:
+  # Inputs
+  ui[0]: "ref_clk (32.768 kHz crystal input)"
+  ui[1]: "kp_sel[0] - proportional gain select"
+  ui[2]: "kp_sel[1]"
+  ui[3]: "kp_sel[2]"
+  ui[4]: "ki_sel[0] - integral gain select"
+  ui[5]: "ki_sel[1]"
+  ui[6]: "ki_sel[2]"
+  ui[7]: "loop_enable"
+
+  # Outputs
+  uo[0]: "dco_clk_out (DCO output clock)"
+  uo[1]: "div_clk_out (DCO / 512, matches ref_clk when locked)"
+  uo[2]: "locked (lock indicator)"
+  uo[3]: "phase_error sign"
+  uo[4]: "|phase_error|[0]"
+  uo[5]: "|phase_error|[1]"
+  uo[6]: "|phase_error|[2]"
+  uo[7]: "|phase_error|[3]"
+
+  # Bidirectional (all outputs)
+  uio[0]: "dco_control[4]"
+  uio[1]: "dco_control[5]"
+  uio[2]: "dco_control[6]"
+  uio[3]: "dco_control[7]"
+  uio[4]: "dco_control[8]"
+  uio[5]: "dco_control[9]"
+  uio[6]: "dco_control[10]"
+  uio[7]: "dco_control[11]"

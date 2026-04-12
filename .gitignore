@@ -1,0 +1,15 @@
+# Build artifacts
+*.vcd
+adpll_tb
+sim_build/
+test/sim_build/
+test/results.xml
+test/__pycache__/
+runs/
+
+# Python
+*.pyc
+.pytest_cache/
+
+# System
+.DS_Store
