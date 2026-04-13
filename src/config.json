@@ -1,0 +1,14 @@
+{
+  "DESIGN_NAME": "tt_um_adpll",
+  "VERILOG_FILES": [
+    "dir::tt_um_adpll.v",
+    "dir::adpll_top.v",
+    "dir::dco.v",
+    "dir::tdc.v",
+    "dir::loop_filter.v",
+    "dir::divider.v",
+    "dir::lock_detect.v"
+  ],
+  "DIE_AREA": "0 0 161.00 111.52",
+  "FP_DEF_TEMPLATE": "dir::../tt/def/tt_block_1x1_pg.def"
+}
