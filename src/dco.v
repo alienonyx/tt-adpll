@@ -1,17 +1,17 @@
 // Digitally Controlled Oscillator (DCO)
 //
-// Two implementations selected by `SYNTHESIS define:
-//   - SYNTHESIS: Ring oscillator with tunable length + switchable loads
-//   - Otherwise: Behavioral delay-based model for functional simulation
+// Two implementations:
+//   - Default: Synthesizable ring oscillator (for OpenLane/ASIC flow)
+//   - SIM defined: Behavioral delay model (for functional simulation)
 //
 // In both modes:
 //   Higher control_word -> higher output frequency
 //
 
-`ifdef SYNTHESIS
-`timescale 1ns / 1ps
-`else
+`ifdef SIM
 `timescale 1ps / 1ps   // Picosecond resolution for behavioral model tuning
+`else
+`timescale 1ns / 1ps
 `endif
 
 module dco #(
@@ -23,7 +23,47 @@ module dco #(
     output wire                  dco_clk
 );
 
-`ifdef SYNTHESIS
+`ifdef SIM
+
+    // ================================================================
+    // Behavioral model (simulation only)
+    //
+    // Maps control_word linearly to oscillation half-period.
+    // Uses integer picosecond delays (timescale 1ps/1ps) to avoid
+    // real-type issues with cocotb+Icarus.
+    //
+    // Half-period (ps) = 60000 - control_word * 122 / 10
+    //   control_word=0:    60000 ps (60.0 ns) ->  8.33 MHz
+    //   control_word=2464: 29941 ps (29.9 ns) -> 16.70 MHz  (loop settles here)
+    //   control_word=4095: 10041 ps (10.0 ns) -> 49.8  MHz
+    // ================================================================
+
+    reg dco_clk_int;
+    assign dco_clk = dco_clk_int;
+
+    localparam integer BASE_HP_PS  = 60000;  // 60.0 ns in ps
+    localparam integer STEP_X10    = 122;    // 12.2 ps per LSB (scaled x10)
+    localparam integer MIN_HP_PS   = 15000;  // 15.0 ns minimum
+
+    integer hp_ps;
+
+    initial dco_clk_int = 1'b0;
+
+    always begin
+        if (!rst_n || !enable) begin
+            dco_clk_int = 1'b0;
+            @(posedge rst_n or posedge enable);
+        end else if (^control_word === 1'bx) begin
+            // Unknown control word at startup — use safe default delay
+            #(BASE_HP_PS) dco_clk_int = ~dco_clk_int;
+        end else begin
+            hp_ps = BASE_HP_PS - (control_word * STEP_X10) / 10;
+            if (hp_ps < MIN_HP_PS) hp_ps = MIN_HP_PS;
+            #(hp_ps) dco_clk_int = ~dco_clk_int;
+        end
+    end
+
+`else
 
     // ================================================================
     // Synthesizable ring oscillator
@@ -126,46 +166,6 @@ module dco #(
     endgenerate
 
     assign dco_clk = fb;
-
-`else
-
-    // ================================================================
-    // Behavioral model (simulation only)
-    //
-    // Maps control_word linearly to oscillation half-period.
-    // Uses integer picosecond delays (timescale 1ps/1ps) to avoid
-    // real-type issues with cocotb+Icarus.
-    //
-    // Half-period (ps) = 60000 - control_word * 122 / 10
-    //   control_word=0:    60000 ps (60.0 ns) ->  8.33 MHz
-    //   control_word=2464: 29941 ps (29.9 ns) -> 16.70 MHz  (loop settles here)
-    //   control_word=4095: 10041 ps (10.0 ns) -> 49.8  MHz
-    // ================================================================
-
-    reg dco_clk_int;
-    assign dco_clk = dco_clk_int;
-
-    localparam integer BASE_HP_PS  = 60000;  // 60.0 ns in ps
-    localparam integer STEP_X10    = 122;    // 12.2 ps per LSB (scaled x10)
-    localparam integer MIN_HP_PS   = 15000;  // 15.0 ns minimum
-
-    integer hp_ps;
-
-    initial dco_clk_int = 1'b0;
-
-    always begin
-        if (!rst_n || !enable) begin
-            dco_clk_int = 1'b0;
-            @(posedge rst_n or posedge enable);
-        end else if (^control_word === 1'bx) begin
-            // Unknown control word at startup — use safe default delay
-            #(BASE_HP_PS) dco_clk_int = ~dco_clk_int;
-        end else begin
-            hp_ps = BASE_HP_PS - (control_word * STEP_X10) / 10;
-            if (hp_ps < MIN_HP_PS) hp_ps = MIN_HP_PS;
-            #(hp_ps) dco_clk_int = ~dco_clk_int;
-        end
-    end
 
 `endif
 

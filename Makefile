@@ -5,7 +5,7 @@ OUT = adpll_tb
 .PHONY: sim wave clean
 
 sim: $(SRC) $(TB)
-	iverilog -o $(OUT) -g2012 $(TB) $(SRC)
+	iverilog -o $(OUT) -g2012 -DSIM $(TB) $(SRC)
 	vvp $(OUT)
 
 wave: sim
