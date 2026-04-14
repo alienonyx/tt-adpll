@@ -140,14 +140,12 @@ module dco #(
     assign fb = fb_mux;
 
     // First stage: gated NAND (starts/stops oscillation)
-    (* dont_touch = "true" *)
     assign stg[0] = ~(en & fb);
 
     // Inverter chain: stages 1 through 62
     genvar s;
     generate
         for (s = 1; s < NSTG; s = s + 1) begin : inv
-            (* dont_touch = "true" *)
             assign stg[s] = ~stg[s-1];
         end
     endgenerate
