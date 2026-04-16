@@ -61,8 +61,6 @@
       "KLayout.StreamOut",
       "Magic.WriteLEF",
       "Odb.CheckDesignAntennaProperties",
-      "KLayout.XOR",
-      "Checker.XOR",
       "Magic.DRC",
       "KLayout.DRC",
       "Checker.MagicDRC",
