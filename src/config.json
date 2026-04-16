@@ -71,7 +71,6 @@
       "Checker.IllegalOverlap",
       "Netgen.LVS",
       "Checker.LVS",
-      "Yosys.EQY",
       "Checker.SetupViolations",
       "Checker.HoldViolations",
       "Checker.MaxSlewViolations",
