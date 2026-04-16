@@ -1,6 +1,6 @@
 {
   "meta": {
-    "version": 2,
+    "version": 1,
     "flow": [
       "Verilator.Lint",
       "Checker.LintTimingConstructs",
@@ -89,7 +89,7 @@
     "dir::divider.v",
     "dir::lock_detect.v"
   ],
-  "DIE_AREA": [0, 0, 161.00, 111.52],
+  "DIE_AREA": "0 0 161.00 111.52",
   "FP_DEF_TEMPLATE": "dir::../tt/def/tt_block_1x1_pg.def",
   "CLOCK_PORT": "clk",
   "CLOCK_PERIOD": 100,
