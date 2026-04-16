@@ -14,6 +14,7 @@
 `timescale 1ns / 1ps
 `endif
 
+(* keep_hierarchy = "yes" *)
 module dco #(
     parameter DCO_WIDTH = 12
 )(
