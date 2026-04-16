@@ -92,5 +92,6 @@
   "FP_DEF_TEMPLATE": "dir::../tt/def/tt_block_1x1_pg.def",
   "CLOCK_PORT": "clk",
   "CLOCK_PERIOD": 100,
-  "ERROR_ON_SYNTH_CHECKS": false
+  "ERROR_ON_SYNTH_CHECKS": false,
+  "RUN_KLAYOUT_XOR": false
 }
