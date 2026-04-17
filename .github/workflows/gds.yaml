@@ -40,6 +40,7 @@ jobs:
   viewer:
     needs: gds
     runs-on: ubuntu-24.04
+    continue-on-error: true
     permissions:
       pages: write
       id-token: write
