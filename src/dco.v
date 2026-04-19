@@ -14,7 +14,6 @@
 `timescale 1ns / 1ps
 `endif
 
-(* keep_hierarchy = "yes" *)
 module dco #(
     parameter DCO_WIDTH = 12
 )(
@@ -67,40 +66,27 @@ module dco #(
 `else
 
     // ================================================================
-    // Synthesizable ring oscillator
+    // Synthesizable ring oscillator — explicit sky130 stdcells
     //
-    // Coarse tuning: control_word[11:7] selects ring length
-    //   5 bits -> 31 options, ring lengths 3 to 63 (odd, step 2)
-    //   Higher value -> shorter ring -> higher frequency
+    // The ring is built from sky130_fd_sc_hd__inv_2 instances with
+    // per-cell (* keep = "true" *) so synthesis optimization cannot
+    // collapse the feedback chain.
     //
-    // Fine tuning: control_word[6:0] controls 7 load buffers
-    //   Each bit disables one capacitive load on ring node
-    //   Higher value -> fewer loads -> higher frequency
-    //
-    // Actual oscillation frequency depends on Sky130 process corner,
-    // voltage, and temperature. The ADPLL loop compensates for this.
+    // Coarse tuning: control_word[11:7] selects ring length (3-63)
+    // Fine tuning:   control_word[6:0] enables 7 load buffers on stg[1]
     // ================================================================
 
     wire en = rst_n & enable;
     wire [4:0] coarse = control_word[11:7];
     wire [6:0] fine   = control_word[6:0];
 
-    // ---- 63-stage inverter chain ----
     localparam NSTG = 63;
-
-    (* dont_touch = "true" *)
     wire [NSTG-1:0] stg;
 
-    // Feedback tap: select ring length (must be even index for odd inversions)
-    // tap = 62 - 2*coarse, clamped to minimum 2 (ring length 3)
+    // Feedback tap: tap = 62 - 2*coarse, clamped to minimum 2 (ring length 3)
     wire [5:0] tap;
     assign tap = (coarse >= 5'd31) ? 6'd2 : (6'd62 - {coarse, 1'b0});
 
-    // Feedback from selected tap via MUX
-    (* dont_touch = "true" *)
-    wire fb;
-
-    // Explicit MUX for feedback tap selection
     reg fb_mux;
     always @(*) begin
         case (tap)
@@ -138,29 +124,45 @@ module dco #(
             default: fb_mux = stg[62];
         endcase
     end
-    assign fb = fb_mux;
+    wire fb = fb_mux;
 
-    // First stage: gated NAND (starts/stops oscillation)
-    assign stg[0] = ~(en & fb);
+    // Starter gate: stg[0] = ~(en & fb). Gates oscillation on/off.
+    (* keep = "true" *)
+    sky130_fd_sc_hd__nand2_1 u_start (
+        .A (en),
+        .B (fb),
+        .Y (stg[0])
+    );
 
-    // Inverter chain: stages 1 through 62
+    // 62-inverter ring: stg[s] = ~stg[s-1]. Per-instance keep prevents
+    // Yosys from collapsing the chain (a feedback of NOTs is logically
+    // equivalent to wires without the keeps).
     genvar s;
     generate
-        for (s = 1; s < NSTG; s = s + 1) begin : inv
-            assign stg[s] = ~stg[s-1];
+        for (s = 1; s < NSTG; s = s + 1) begin : inv_stage
+            (* keep = "true" *)
+            sky130_fd_sc_hd__inv_2 u_inv (
+                .A (stg[s-1]),
+                .Y (stg[s])
+            );
         end
     endgenerate
 
-    // ---- Fine tuning: switchable capacitive loads ----
-    // Each load buffer adds capacitance to stg[1], slowing the ring.
-    // fine[i]=1 -> load i disabled (less capacitance, faster)
-    // fine[i]=0 -> load i enabled  (more capacitance, slower)
+    // Fine tuning: switchable capacitive loads on stg[1].
+    // fine[i]=1 -> load disabled (input tied to 0, less cap, faster)
+    // fine[i]=0 -> load enabled  (input follows stg[1], more cap, slower)
+    // Buffers are kept so they survive optimization and contribute parasitic cap.
+    wire [6:0] load_in;
+    wire [6:0] load_out;
     genvar i;
     generate
         for (i = 0; i < 7; i = i + 1) begin : fine_ld
-            (* dont_touch = "true" *)
-            wire ld;
-            assign ld = (~fine[i]) ? stg[1] : 1'b0;
+            assign load_in[i] = fine[i] ? 1'b0 : stg[1];
+            (* keep = "true" *)
+            sky130_fd_sc_hd__buf_2 u_load (
+                .A (load_in[i]),
+                .X (load_out[i])
+            );
         end
     endgenerate
 
